@@ -20,7 +20,7 @@ package com.touchmenotapps.carousel.simple;
 import android.content.Context;
 import android.util.TypedValue;
 
-public class CarouselStyle {
+public class VerticalCarouselStyle {
 	
 	public static final int NO_STYLE = 0;
 	public static final int STYLE_RIGHT_ALIGNED = 2;
@@ -28,6 +28,7 @@ public class CarouselStyle {
 	public static final int STYLE_RIGHT_ALIGNED_WITH_ROTATION = 4;
 	public static final int STYLE_LEFT_ALIGNED_WITH_ROTATION = 5;
 
+	/* Transparency of incative child view */
 	private float mSetInactiveViewTransparency;
 	/* Number of pixel between the top of two Views */
 	private int mSpaceBetweenViews;
@@ -48,7 +49,12 @@ public class CarouselStyle {
 	
 	private int dip;
 
-	public CarouselStyle(Context context, int style) {
+	/**
+	 * Constructor for VerticalCarouselStyle
+	 * @param context - Application context
+	 * @param style - Pre-existing style to be applied.
+	 */
+	public VerticalCarouselStyle(Context context, int style) {
 		dip = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, (float) 1, context.getResources().getDisplayMetrics());
 		mSetInactiveViewTransparency = 1.0f;
 		mHowManyViews = 99;
@@ -58,7 +64,7 @@ public class CarouselStyle {
 	}
 	
 	/**
-	 * 
+	 * Carousel style to be set.
 	 * @param style
 	 */
 	private void setStyle(int style) {
@@ -107,7 +113,7 @@ public class CarouselStyle {
 	 * @param mSetInactiveViewTransparency
 	 *            the mSetInactiveViewTransparency to set
 	 */
-	public void setSetInactiveViewTransparency(
+	public void setInactiveViewTransparency(
 			float mSetInactiveViewTransparency) {
 		this.mSetInactiveViewTransparency = mSetInactiveViewTransparency;
 	}
@@ -176,7 +182,7 @@ public class CarouselStyle {
 	/**
 	 * @return the mSetInactiveViewTransparency
 	 */
-	public float getSetInactiveViewTransparency() {
+	public float getInactiveViewTransparency() {
 		return mSetInactiveViewTransparency;
 	}
 

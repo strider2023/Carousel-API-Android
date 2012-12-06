@@ -2,7 +2,7 @@ package com.touchmenotapps.carousel.simple;
 
 /*
  * Copyright (C) 2012 
- * Davy Leggieri (valestin@gmail.com ) and Arindam Nath (strider2023@gmail.com)
+ * Davy Leggieri and Arindam Nath (strider2023@gmail.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

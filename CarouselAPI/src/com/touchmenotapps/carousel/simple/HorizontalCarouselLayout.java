@@ -2,7 +2,7 @@ package com.touchmenotapps.carousel.simple;
 
 /*
  * Copyright (C) 2012 
- * Davy Leggieri (valestin@gmail.com ) and Arindam Nath (strider2023@gmail.com)
+ * Arindam Nath (strider2023@gmail.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.touchmenotapps.carousel.simple;
 
 import android.content.Context;
 
+import android.graphics.Camera;
 import android.graphics.Matrix;
 
 import android.os.SystemClock;
@@ -34,11 +35,12 @@ import android.view.animation.Transformation;
 
 import android.widget.BaseAdapter;
 
-public class CarouselLayout extends ViewGroup {
+public class HorizontalCarouselLayout extends ViewGroup {
+
 	/* Scale ratio for each "layer" of children */
 	private final float SCALE_RATIO = 0.9f;
 	/* Gesture sensibility */
-	private int mGestureSensitivity = 120;
+	private int mGestureSensitivity = 80;
 	/* Animation time */
 	private int DURATION = 200;
 
@@ -52,7 +54,7 @@ public class CarouselLayout extends ViewGroup {
 	private int mTranslate;
 	/* Status of translatation */
 	private boolean mTranslatateEnbabled = false;
-
+	/* Transparency of incative child view */
 	private float mSetInactiveViewTransparency = 1.0f;
 
 	/* Number of internal Views */
@@ -79,6 +81,10 @@ public class CarouselLayout extends ViewGroup {
 	private int mWidthCenter;
 	/* Number of view below/above center view */
 	private int mMaxChildUnderCenter;
+	/* Inactive child view zoom out factor */
+	private float mViewZoomOutFactor = 0.0f;
+	/* Inactive child view coverflow rotation */
+	private int mCoverflowRotation = 0;
 	/* Collect crap views */
 	private Collector mCollector = new Collector();
 	/* Avoid multiple allocation */
@@ -131,7 +137,7 @@ public class CarouselLayout extends ViewGroup {
 					mCenterView = mMaxChildUnderCenter;
 				}
 				removeCallbacks(animationTask);
-				mCallback.onItemChangedListener(mAdapter.getView(mCurrentItem, null, CarouselLayout.this), mCurrentItem);
+				mCallback.onItemChangedListener(mAdapter.getView(mCurrentItem, null, HorizontalCarouselLayout.this), mCurrentItem);
 				// Animate
 			} else {
 				float perCent = ((float) totalTime) / DURATION;
@@ -151,10 +157,10 @@ public class CarouselLayout extends ViewGroup {
 						float velocityX, float velocityY) {
 					// Intercept gestion only if not animating views
 					if (!mIsAnimating && mAdapter != null) {
-						int dy = (int) (e2.getY() - e1.getY());
-						if ((Math.abs(dy) > mGestureSensitivity)
-								&& (Math.abs(velocityX) < Math.abs(velocityY))) {
-							if (velocityY > 0) {
+						int dx = (int) (e2.getX() - e1.getX());
+						if ((Math.abs(dx) > mGestureSensitivity)
+								&& (Math.abs(velocityY) < Math.abs(velocityX))) {
+							if (velocityX > 0) {
 								// Top-bottom movement
 								if (mCurrentItem > 0) {
 									mItemtoReach = mCurrentItem - 1;
@@ -180,19 +186,19 @@ public class CarouselLayout extends ViewGroup {
 			});
 
 	// ~--- constructors -------------------------------------------------------
-	public CarouselLayout(Context context) {
+	public HorizontalCarouselLayout(Context context) {
 		super(context);
 		mContext = context;
 		initSlidingAnimation();
 	}
 
-	public CarouselLayout(Context context, AttributeSet attrs) {
+	public HorizontalCarouselLayout(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		mContext = context;
 		initSlidingAnimation();
 	}
 
-	public CarouselLayout(Context context, AttributeSet attrs, int defStyle) {
+	public HorizontalCarouselLayout(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
 		mContext = context;
 		initSlidingAnimation();
@@ -219,8 +225,8 @@ public class CarouselLayout extends ViewGroup {
 		mGestureSensitivity = gestureSensitivity;
 	}
 
-	public void setStyle(CarouselStyle style) {
-		mSetInactiveViewTransparency = style.getSetInactiveViewTransparency();
+	public void setStyle(HorizontalCarouselStyle style) {
+		mSetInactiveViewTransparency = style.getInactiveViewTransparency();
 		mSpaceBetweenViews = style.getSpaceBetweenViews();
 		mRotation = style.getRotation();
 		mRotationEnabled = style.isRotationEnabled();
@@ -228,6 +234,8 @@ public class CarouselLayout extends ViewGroup {
 		mTranslatateEnbabled = style.isTranslatateEnbabled();
 		mHowManyViews = style.getHowManyViews();
 		mChildSizeRatio = style.getChildSizeRatio();
+		mCoverflowRotation = style.getCoverflowRotation();
+		mViewZoomOutFactor = style.getViewZoomOutFactor();
 		DURATION = style.getAnimationTime();
 	}
 
@@ -268,7 +276,6 @@ public class CarouselLayout extends ViewGroup {
 		if (mCenterView < mMaxChildUnderCenter) {
 			if (getChildCount() > mMaxChildUnderCenter + 1) {
 				View old = getChildAt(getChildCount() - 1);
-
 				detachViewFromParent(old);
 				mCollector.collect(old);
 			}
@@ -299,7 +306,6 @@ public class CarouselLayout extends ViewGroup {
 		// Local (above center): too many children
 		if (mCenterView >= mMaxChildUnderCenter) {
 			View old = getChildAt(0);
-
 			detachViewFromParent(old);
 			mCollector.collect(old);
 		}
@@ -380,9 +386,9 @@ public class CarouselLayout extends ViewGroup {
 		for (int i = 0; i < count; i++) {
 			final View child = getChildAt(i);
 			final float offset = mCenterView - i - gap;
-			final int top = (int) (topCenterView - (mSpaceBetweenViews * offset));
-			child.layout(leftCenterView, top, leftCenterView + mChildrenWidth,
-					top + mChildrenHeight);
+			final int left = (int) (leftCenterView - (mSpaceBetweenViews * offset));
+			child.layout(left, topCenterView, left + mChildrenWidth,
+					topCenterView + mChildrenHeight);
 		}
 	}
 
@@ -409,27 +415,37 @@ public class CarouselLayout extends ViewGroup {
 
 	@Override
 	protected boolean getChildStaticTransformation(View child, Transformation t) {
-		final int topCenterView = mHeightCenter - mChildrenHeightMiddle;
-		final float offset = (-child.getTop() + topCenterView)
+		final Camera camera = new Camera();
+		final int leftCenterView = mWidthCenter - mChildrenWidthMiddle;
+		final float offset = (-child.getLeft() + leftCenterView)
 				/ (float) mSpaceBetweenViews;
 		if (offset != 0) {
 			final float absOffset = Math.abs(offset);
 			float scale = (float) Math.pow(SCALE_RATIO, absOffset);
 			t.clear();
 			t.setTransformationType(Transformation.TYPE_MATRIX);
-			// We can play with transparency here -> t.setAlpha()
 			t.setAlpha(mSetInactiveViewTransparency);
 			final Matrix m = t.getMatrix();
 			m.setScale(scale, scale);
 			if (mTranslatateEnbabled) {
-				m.setTranslate(mTranslate * absOffset, 0);
+				m.setTranslate(0, mTranslate * absOffset);
 			}
-			// scale from top
+			// scale from right
 			if (offset > 0) {
-				m.preTranslate(-mChildrenWidthMiddle, 0);
-				m.postTranslate(mChildrenWidthMiddle, 0);
-				// scale from bottom
+				camera.save();
+				camera.translate(0.0f, 0.0f, (mViewZoomOutFactor*offset));
+				camera.rotateY(mCoverflowRotation);
+				camera.getMatrix(m);
+				camera.restore();
+				m.preTranslate(-mChildrenWidthMiddle, -mChildrenHeight);
+				m.postTranslate(mChildrenWidthMiddle, mChildrenHeight);
+				// scale from left
 			} else {
+				camera.save();
+				camera.translate(0.0f, 0.0f, -(mViewZoomOutFactor*offset));
+				camera.rotateY(-mCoverflowRotation);
+				camera.getMatrix(m);
+				camera.restore();
 				m.preTranslate(-mChildrenWidthMiddle, -mChildrenHeight);
 				m.postTranslate(mChildrenWidthMiddle, mChildrenHeight);
 			}
